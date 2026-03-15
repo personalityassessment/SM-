@@ -10,7 +10,7 @@ import {
   serverTimestamp,
   getDocs
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app-check.js"
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app-check.js";
 
 /*
   ここを Firebase コンソールで表示された自分の値に置き換える
