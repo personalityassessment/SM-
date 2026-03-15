@@ -194,7 +194,7 @@ async function finishDiagnosis() {
 
   try {
     await saveDiagnosisResult(result);
-    statsSummary = await getStatsSummary(result.typeCode, result.title);
+    statsSummary = await getStatsSummary(result.typeCode, result.title, result);
   } catch (error) {
     console.error("Firebase保存または統計取得に失敗:", error);
   }
