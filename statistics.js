@@ -1,21 +1,3 @@
-/*
-このファイルは Firebase Firestore を使って
-- 診断結果保存
-- 簡易統計表示
-を行う
-
-前提:
-firebase.js で以下が export されていること
-- db
-- addDoc
-- collection
-- doc
-- getDoc
-- setDoc
-- increment
-- serverTimestamp
-*/
-
 import {
   db,
   addDoc,
@@ -119,6 +101,58 @@ function getTrustInfo(totalCount) {
   };
 }
 
+function buildAnalysisComments(summary, result) {
+  const comments = [];
+
+  if (summary.mTopPercent <= 3) {
+    comments.push(`上位${summary.mTopPercent}%のドM適性`);
+  } else if (summary.sTopPercent <= 3) {
+    comments.push(`上位${summary.sTopPercent}%のドS適性`);
+  } else if (result.smLabel === "M") {
+    comments.push("強いM傾向");
+  } else if (result.smLabel === "S") {
+    comments.push("強いS傾向");
+  } else if (result.smLabel === "M寄り") {
+    comments.push("ややM寄りの気質");
+  } else if (result.smLabel === "S寄り") {
+    comments.push("ややS寄りの気質");
+  } else {
+    comments.push("バランス型の傾向");
+  }
+
+  if (result.mPercent >= 80) {
+    comments.push("かなり希少な受け型");
+  } else if (result.sPercent >= 80) {
+    comments.push("かなり希少な攻め型");
+  } else if (summary.titlePercent <= 5) {
+    comments.push("かなりレアな称号帯");
+  } else {
+    comments.push("比較的標準的な帯域");
+  }
+
+  if (result.axes.FI >= 65) {
+    comments.push("観察寄りタイプ");
+  } else if (result.axes.OA >= 65) {
+    comments.push("行動寄りタイプ");
+  } else if (result.axes.RC >= 65) {
+    comments.push("受容・支配差がはっきりしたタイプ");
+  } else {
+    comments.push("バランスの取れた傾向");
+  }
+
+  if (result.mPercent >= 75 && result.sPercent >= 75) {
+    comments.push("混沌領域に近いスコア");
+  } else if (result.mPercent >= 60 && result.sPercent >= 60) {
+    comments.push("両極にまたがる複合型");
+  } else if (Math.abs(result.mPercent - result.sPercent) <= 10) {
+    comments.push("中立寄りの安定した配分");
+  } else {
+    comments.push("偏りがはっきりしたスコア");
+  }
+
+  return comments.slice(0, 4);
+}
+
 /* =========================
    Summary + Ranking
 ========================= */
@@ -180,17 +214,29 @@ export async function getStatsSummary(typeCode, title, result) {
     }
   });
 
-  typeStats.sort((a, b) => b.count - a.count);
+  typeStats.sort((a, b) => a.count - b.count);
 
-  let typeRank = null;
+  let rareTypeRank = null;
   for (let i = 0; i < typeStats.length; i += 1) {
     if (typeStats[i].code === typeCode) {
-      typeRank = i + 1;
+      rareTypeRank = i + 1;
       break;
     }
   }
 
   const trust = getTrustInfo(totalCount);
+  const analysisComments = buildAnalysisComments(
+    {
+      totalCount,
+      typeCount,
+      titleCount,
+      typePercent,
+      titlePercent,
+      mTopPercent,
+      sTopPercent
+    },
+    result
+  );
 
   return {
     totalCount,
@@ -202,9 +248,10 @@ export async function getStatsSummary(typeCode, title, result) {
     sTopPercent,
     mRank,
     sRank,
-    typeRank,
+    rareTypeRank,
     typeTotalKinds: typeStats.length,
-    trust
+    trust,
+    analysisComments
   };
 }
 
@@ -224,79 +271,28 @@ export function renderStatisticsHTML(summary, result) {
 
   return `
     <div class="section-card">
-      <h2>統計表示</h2>
+      <h2>📊 統計データ</h2>
       <p class="muted">${summary.trust.label}</p>
 
-      <div class="stats-grid">
-        <div class="stat-box">
-          <strong>累計診断数</strong>
-          <span>${summary.totalCount}件</span>
-        </div>
+      <div class="stats-block">
+        <div class="stats-line-title">M度：上位 ${summary.mTopPercent}%</div>
+        <div class="stats-line-title">S度：上位 ${summary.sTopPercent}%</div>
+        <div class="stats-line-title">このタイプ：${summary.typePercent}%</div>
+        <div class="stats-line-title">この称号：${summary.titlePercent}%</div>
+      </div>
 
-        <div class="stat-box">
-          <strong>このタイプの件数</strong>
-          <span>${summary.typeCount}件</span>
-        </div>
+      <div class="stats-block">
+        <h3>🏆 あなたの順位</h3>
+        <div class="stats-line">Mランキング：${summary.mRank}位 / ${summary.totalCount}人</div>
+        <div class="stats-line">Sランキング：${summary.sRank}位 / ${summary.totalCount}人</div>
+        <div class="stats-line">タイプレア順位：${summary.rareTypeRank || "-"}位 / ${summary.typeTotalKinds || 16}タイプ</div>
+      </div>
 
-        <div class="stat-box">
-          <strong>この称号の件数</strong>
-          <span>${summary.titleCount}件</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>タイプ人口割合</strong>
-          <span>${summary.typePercent}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>称号レア度</strong>
-          <span>${summary.titlePercent}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>M度の上位%</strong>
-          <span>上位 ${summary.mTopPercent}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>S度の上位%</strong>
-          <span>上位 ${summary.sTopPercent}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>タイプ順位</strong>
-          <span>${summary.typeRank || "-"}位 / ${summary.typeTotalKinds || 16}タイプ</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>Mスコア順位</strong>
-          <span>${summary.mRank}位 / ${summary.totalCount}件</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>Sスコア順位</strong>
-          <span>${summary.sRank}位 / ${summary.totalCount}件</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>FLAT思考指数</strong>
-          <span>${result.flatThinking}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>保留指数</strong>
-          <span>${result.holdIndex}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>M度</strong>
-          <span>${result.mPercent}%</span>
-        </div>
-
-        <div class="stat-box">
-          <strong>S度</strong>
-          <span>${result.sPercent}%</span>
-        </div>
+      <div class="stats-block">
+        <h3>🧠 分析コメント</h3>
+        <ul class="stats-comment-list">
+          ${summary.analysisComments.map(comment => `<li>・${comment}</li>`).join("")}
+        </ul>
       </div>
     </div>
   `;

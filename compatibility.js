@@ -319,3 +319,223 @@ export function getCompatibility(typeCode) {
     bad: []
   };
 }
+/* =========================
+   Pair Compatibility (追加分)
+========================= */
+
+const PAIR_BASE_SCORE = {
+  "FROT:ICAP": 82,
+  "FROT:FCOT": 78,
+  "FROT:FCOP": 74,
+  "FROT:IRAP": 48,
+  "FROT:IRAT": 31,
+  "FROT:ICOT": 36,
+
+  "FROP:FCAP": 76,
+  "FROP:FRAP": 73,
+  "FROP:ICOT": 52,
+  "FROP:ICAP": 58,
+
+  "FRAT:IRAP": 74,
+  "FRAT:IROP": 72,
+  "FRAT:FROT": 42,
+  "FRAT:ICAT": 38,
+
+  "FRAP:IROP": 76,
+  "FRAP:FROP": 70,
+  "FRAP:ICAP": 54,
+  "FRAP:FROT": 44,
+
+  "FCOT:FCAP": 78,
+  "FCOT:FCAT": 76,
+  "FCOT:IRAP": 32,
+  "FCOT:IRAT": 35,
+
+  "FCOP:FCOT": 77,
+  "FCOP:FCAT": 75,
+  "FCOP:IRAP": 40,
+  "FCOP:FRAT": 43,
+
+  "FCAT:FCOT": 78,
+  "FCAT:FCOP": 76,
+  "FCAT:IRAP": 39,
+  "FCAT:IRAT": 41,
+
+  "FCAP:ICAT": 79,
+  "FCAP:FCOT": 77,
+  "FCAP:IRAP": 47,
+  "FCAP:ICAP": 73,
+
+  "IROT:IRAP": 77,
+  "IROT:IROP": 75,
+  "IROT:FROT": 43,
+  "IROT:FCOT": 40,
+
+  "IROP:FRAP": 76,
+  "IROP:FRAT": 74,
+  "IROP:FROT": 41,
+  "IROP:ICAT": 45,
+
+  "IRAT:IRAP": 74,
+  "IRAT:FRAT": 71,
+  "IRAT:FROT": 33,
+  "IRAT:FCOT": 36,
+
+  "IRAP:IRAT": 74,
+  "IRAP:ICOP": 81,
+  "IRAP:FROT": 47,
+  "IRAP:FCOT": 31,
+
+  "ICOT:ICAP": 83,
+  "ICOT:FCAP": 79,
+  "ICOT:FROT": 37,
+  "ICOT:FCOT": 34,
+
+  "ICOP:IRAP": 81,
+  "ICOP:IROP": 74,
+  "ICOP:FROT": 49,
+  "ICOP:FCAT": 45,
+
+  "ICAT:FCAP": 80,
+  "ICAT:FCOT": 76,
+  "ICAT:FRAP": 42,
+  "ICAT:FRAT": 38,
+
+  "ICAP:ICOT": 83,
+  "ICAP:FCAP": 78,
+  "ICAP:FROT": 46,
+  "ICAP:FROP": 48
+};
+
+function getPairKey(a, b) {
+  return `${a}:${b}`;
+}
+
+function getBasePairScore(a, b) {
+  const key = getPairKey(a, b);
+  const reverseKey = getPairKey(b, a);
+
+  if (typeof PAIR_BASE_SCORE[key] === "number") return PAIR_BASE_SCORE[key];
+  if (typeof PAIR_BASE_SCORE[reverseKey] === "number") return PAIR_BASE_SCORE[reverseKey];
+
+  return 58;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getAxisSignatureFromType(typeCode) {
+  return {
+    FI: typeCode[0],
+    RC: typeCode[1],
+    OA: typeCode[2],
+    TP: typeCode[3]
+  };
+}
+
+function calcAxisBonus(myType, otherType) {
+  const a = getAxisSignatureFromType(myType);
+  const b = getAxisSignatureFromType(otherType);
+
+  let bonus = 0;
+
+  if (a.FI !== b.FI) bonus += 4;
+  if (a.RC !== b.RC) bonus += 5;
+  if (a.OA !== b.OA) bonus += 4;
+  if (a.TP !== b.TP) bonus += 3;
+
+  return bonus;
+}
+
+function calcPercentBonus(myM, myS, otherM, otherS) {
+  const mGap = Math.abs(myM - otherM);
+  const sGap = Math.abs(myS - otherS);
+
+  const mScore = clamp(10 - Math.floor(mGap / 8), -4, 10);
+  const sScore = clamp(10 - Math.floor(sGap / 8), -4, 10);
+
+  return Math.round((mScore + sScore) / 2);
+}
+
+export function getCompatibilityRankName(score) {
+  if (score >= 95) return "完全共鳴";
+  if (score >= 85) return "運命のペア";
+  if (score >= 70) return "共鳴関係";
+  if (score >= 55) return "安定関係";
+  if (score >= 35) return "刺激関係";
+  return "カオス関係";
+}
+
+export function getCompatibilityRankDescription(score) {
+  if (score >= 95) return "極めて希少な最高相性";
+  if (score >= 85) return "めったに出ない特別相性";
+  if (score >= 70) return "互いの性質が響き合う関係";
+  if (score >= 55) return "自然体で続きやすい関係";
+  if (score >= 35) return "噛み合うより、揺さぶり合う関係";
+  return "ぶつかり合うほど印象に残る関係";
+}
+
+export function getCompatibilityNext(score) {
+  if (score >= 95) {
+    return { nextName: null, diff: null };
+  }
+
+  if (score >= 85) {
+    return { nextName: "完全共鳴", diff: 95 - score };
+  }
+
+  if (score >= 70) {
+    return { nextName: "運命のペア", diff: 85 - score };
+  }
+
+  if (score >= 55) {
+    return { nextName: "共鳴関係", diff: 70 - score };
+  }
+
+  if (score >= 35) {
+    return { nextName: "安定関係", diff: 55 - score };
+  }
+
+  return { nextName: "刺激関係", diff: 35 - score };
+}
+
+export function getPairCompatibility(myProfile, otherProfile) {
+  const base = getBasePairScore(myProfile.typeCode, otherProfile.typeCode);
+  const axisBonus = calcAxisBonus(myProfile.typeCode, otherProfile.typeCode);
+  const percentBonus = calcPercentBonus(
+    myProfile.mPercent,
+    myProfile.sPercent,
+    otherProfile.mPercent,
+    otherProfile.sPercent
+  );
+
+  const score = clamp(base + axisBonus + percentBonus, 0, 100);
+  const rankName = getCompatibilityRankName(score);
+  const rankDescription = getCompatibilityRankDescription(score);
+  const next = getCompatibilityNext(score);
+
+  return {
+    score,
+    rankName,
+    rankDescription,
+    nextName: next.nextName,
+    nextDiff: next.diff,
+    awakening: score >= 95 ? "完全共鳴" : null
+  };
+}
+
+export function getReverseTypeCode(typeCode) {
+  const swap = {
+    F: "I",
+    I: "F",
+    R: "C",
+    C: "R",
+    O: "A",
+    A: "O",
+    T: "P",
+    P: "T"
+  };
+
+  return `${swap[typeCode[0]]}${swap[typeCode[1]]}${swap[typeCode[2]]}${swap[typeCode[3]]}`;
+}

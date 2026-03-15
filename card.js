@@ -6,9 +6,14 @@ import {
   getNextInfo
 } from "./titles.js";
 import { TYPE_META, getSubtitle } from "./types.js";
-import { getCompatibility, COMPATIBILITY_LABELS } from "./compatibility.js";
+import {
+  getCompatibility,
+  COMPATIBILITY_LABELS,
+  getPairCompatibility,
+  getReverseTypeCode
+} from "./compatibility.js";
 import { renderStatisticsHTML } from "./statistics.js";
-import { renderShareButtons } from "./share.js";
+import { renderShareButtons, getSharedProfileFromUrl } from "./share.js";
 
 /* =========================
    Score / Result Helpers
@@ -127,7 +132,6 @@ export function getSMComment(mPercent, sPercent, typeCode) {
   return "感情や体感を重視しながら、その場の濃度を楽しむタイプ。";
 }
 
-/* 保存した最新ロジック */
 export function getSMLabel(mPercent, sPercent) {
   const mDiff = mPercent - sPercent;
   const sDiff = sPercent - mPercent;
@@ -283,7 +287,7 @@ function renderSMBigLabel(result) {
 }
 
 /* =========================
-   Main Result Card HTML
+   Main Result Card
 ========================= */
 
 export function renderResultCardHTML(result) {
@@ -320,10 +324,6 @@ export function renderResultCardHTML(result) {
   `;
 }
 
-/* =========================
-   Type Detail HTML
-========================= */
-
 export function renderTypeDetailHTML(result) {
   return `
     <div class="section-card">
@@ -334,11 +334,84 @@ export function renderTypeDetailHTML(result) {
   `;
 }
 
-/* =========================
-   Compatibility HTML
-========================= */
+function renderPairCompatibilityHTML(result) {
+  const shared = getSharedProfileFromUrl();
 
-export function renderCompatibilityHTML(typeCode, typeNameMap = TYPE_META) {
+  if (!shared) {
+    return "";
+  }
+
+  const otherType = TYPE_META[shared.typeCode];
+  if (!otherType) {
+    return "";
+  }
+
+  const pair = getPairCompatibility(
+    {
+      typeCode: result.typeCode,
+      mPercent: result.mPercent,
+      sPercent: result.sPercent
+    },
+    {
+      typeCode: shared.typeCode,
+      mPercent: shared.mPercent,
+      sPercent: shared.sPercent
+    }
+  );
+
+  return `
+    <div class="section-card">
+      <h2>🤝 相性診断</h2>
+      <div class="pair-card">
+        <div class="pair-line">あなた：${result.typeCode}【${result.typeName}】</div>
+        <div class="pair-line">相手：${shared.typeCode}【${otherType.name}】</div>
+
+        <div class="pair-score">${pair.score}%</div>
+        <div class="pair-rank">${pair.rankName}</div>
+        <p class="muted">${pair.rankDescription}</p>
+
+        ${
+          pair.awakening
+            ? `<div class="next-box">覚醒：${pair.awakening}</div>`
+            : ``
+        }
+
+        ${
+          pair.nextName
+            ? `<div class="next-box">あと${pair.nextDiff}%で ${pair.nextName}</div>`
+            : ``
+        }
+      </div>
+    </div>
+  `;
+}
+
+function renderReverseTypeHTML(result) {
+  const shared = getSharedProfileFromUrl();
+
+  if (!shared) {
+    return "";
+  }
+
+  const reverseCode = getReverseTypeCode(result.typeCode);
+  const reverseType = TYPE_META[reverseCode];
+
+  if (!reverseType) {
+    return "";
+  }
+
+  return `
+    <div class="section-card">
+      <h2>⚡ 真逆タイプ</h2>
+      <div class="compat-item">
+        <strong>${reverseCode}</strong>
+        <p>${reverseType.name}</p>
+      </div>
+    </div>
+  `;
+}
+
+export function renderCompatibilityCategoryHTML(typeCode, typeNameMap = TYPE_META) {
   const compatibility = getCompatibility(typeCode);
 
   return `
@@ -370,9 +443,20 @@ export function renderFullResultHTML(result, statsSummary = null) {
   const parts = [];
 
   parts.push(renderResultCardHTML(result));
-  parts.push(renderShareButtons(result));
+  parts.push(renderShareButtons());
   parts.push(renderTypeDetailHTML(result));
-  parts.push(renderCompatibilityHTML(result.typeCode));
+
+  const pairSection = renderPairCompatibilityHTML(result);
+  if (pairSection) {
+    parts.push(pairSection);
+  }
+
+  const reverseSection = renderReverseTypeHTML(result);
+  if (reverseSection) {
+    parts.push(reverseSection);
+  }
+
+  parts.push(renderCompatibilityCategoryHTML(result.typeCode));
 
   if (statsSummary) {
     parts.push(renderStatisticsHTML(statsSummary, result));
