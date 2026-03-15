@@ -161,7 +161,7 @@ export function getSMLabel(mPercent, sPercent) {
   }
 
   const labels = ["SM二刀流", "SM兼業"];
-return labels[Math.floor(Math.random() * labels.length)];
+return labels[Math.floor(Math.random() * labels.length)];あと
 }
 
 export function normalizeAxisBar(score) {
@@ -309,7 +309,7 @@ export function renderResultCardHTML(result) {
 
       ${
         result.nextTitle
-          ? `<div class="next-box">NEXT：あと${result.nextDiff}%で ${result.nextTitle}</div>`
+          ? `<div class="next-box">NEXT：あと${result.nextDiff}%で ${result.nextTitle}<br><small class="next-note">※もう一度診断すると結果が変わる可能性があります</small></div>`
           : ``
       }
 
