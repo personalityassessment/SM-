@@ -68,11 +68,9 @@ function createQuestionSet() {
     if (axisPool.length < RANDOM_PER_AXIS) {
       throw new Error(`${axis} 軸の質問が不足しています`);
     }
-
     if (netaPool.length < netaNeed) {
       throw new Error(`${axis} 軸のネタ質問が不足しています`);
     }
-
     if (normalPool.length < normalNeed) {
       throw new Error(`${axis} 軸の通常質問が不足しています`);
     }
@@ -86,7 +84,6 @@ function createQuestionSet() {
   if (finalQuestions.length !== TOTAL_COUNT) {
     throw new Error(`出題数が ${TOTAL_COUNT} 問ではありません`);
   }
-
   if (countNeta(finalQuestions) !== TOTAL_NETA_COUNT) {
     throw new Error(`ネタ質問数が ${TOTAL_NETA_COUNT} 問ではありません`);
   }
@@ -105,29 +102,16 @@ function saveSession() {
   );
 }
 
-function loadSession() {
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return false;
-
-  try {
-    const data = JSON.parse(raw);
-    if (!data.questions || !Array.isArray(data.questions)) return false;
-
-    currentQuestions = data.questions;
-    currentAnswers = data.answers || {};
-    currentIndex = Number(data.index || 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
 function saveResult(result) {
   localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+}
+
+function clearResult() {
+  localStorage.removeItem(RESULT_KEY);
 }
 
 function renderQuestion() {
@@ -148,6 +132,9 @@ function renderQuestion() {
 }
 
 window.startDiagnosis = function startDiagnosis() {
+  clearSession();
+  clearResult();
+
   currentQuestions = createQuestionSet();
   currentAnswers = {};
   currentIndex = 0;
@@ -175,6 +162,23 @@ window.answer = function answer(value) {
   }
 
   finishDiagnosis();
+};
+
+window.goPrevQuestion = function goPrevQuestion() {
+  if (!currentQuestions.length) return;
+
+  if (currentIndex > 0) {
+    currentIndex -= 1;
+    saveSession();
+    renderQuestion();
+    return;
+  }
+
+  // 1問目ならトップへ戻す
+  clearSession();
+  startScreen.style.display = "block";
+  questionScreen.style.display = "none";
+  resultScreen.style.display = "none";
 };
 
 async function finishDiagnosis() {
@@ -220,18 +224,10 @@ function bootFromSavedResult() {
   }
 }
 
-function bootFromSavedSession() {
-  if (!loadSession()) return false;
-
-  startScreen.style.display = "none";
-  resultScreen.style.display = "none";
-  questionScreen.style.display = "block";
-  renderQuestion();
-  return true;
-}
-
 (function init() {
-  if (bootFromSavedSession()) return;
+  // 途中の質問再開はしない
+  clearSession();
+
   if (bootFromSavedResult()) return;
 
   startScreen.style.display = "block";
