@@ -160,7 +160,8 @@ export function getSMLabel(mPercent, sPercent) {
     return "S寄り";
   }
 
-  return "バランス型";
+  const labels = ["SM二刀流", "SM兼業"];
+return labels[Math.floor(Math.random() * labels.length)];
 }
 
 export function normalizeAxisBar(score) {
