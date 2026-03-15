@@ -33,13 +33,12 @@ export function buildShareText(result) {
 
   lines.push(`#SM診断 #16タイプ診断 #診断メーカー風`);
 
-  return lines.join("\n");
+  return truncateText(lines.join("\n"), 280);
 }
 
 export function buildShareUrl(result) {
-  const baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/, "");
   const text = buildShareText(result);
-  const url = baseUrl;
+  const url = window.location.href.split("?")[0].split("#")[0];
   return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 }
 
@@ -69,9 +68,13 @@ export function bindShareButtons(result) {
 
   if (retryBtn) {
     retryBtn.addEventListener("click", () => {
-      localStorage.removeItem("sm_diagnosis_session_v1");
-      localStorage.removeItem("sm_diagnosis_result_v1");
-      window.location.reload();
+      if (typeof window.restartDiagnosis === "function") {
+        window.restartDiagnosis();
+      } else {
+        localStorage.removeItem("sm_diagnosis_session_v2");
+        localStorage.removeItem("sm_diagnosis_result_v2");
+        window.location.reload();
+      }
     });
   }
 }

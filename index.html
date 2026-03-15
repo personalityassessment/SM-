@@ -15,8 +15,24 @@
     <h1>あなたのSMタイプは？</h1>
     <p>― 16タイプでわかるあなたのSM気質 ―</p>
 
-    <div id="startScreen">
-      <button onclick="startDiagnosis()">診断スタート</button>
+    <div id="startScreen" class="section-card">
+      <p class="result-sm-comment" style="margin-top:0;">
+        あなたは支配者？それとも受容者？隠れたSM本性を暴きます。
+      </p>
+      <div class="share-row">
+        <button class="share-btn" onclick="startDiagnosis()">診断をはじめる</button>
+      </div>
+    </div>
+
+    <div class="section-card" id="aboutScreen">
+      <h2 style="margin-top:0;">この診断について</h2>
+      <p>
+        この診断は、F/I・R/C・O/A・T/P の4軸から、
+        あなたの思考傾向・行動傾向・支配関係・刺激耐性を分析します。
+      </p>
+      <p style="margin-bottom:0;">
+        結果は「16タイプ」と「称号」の組み合わせで表示されます。
+      </p>
     </div>
 
     <div id="questionScreen" style="display:none">
