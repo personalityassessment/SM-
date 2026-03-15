@@ -127,6 +127,38 @@ export function getSMComment(mPercent, sPercent, typeCode) {
   return "感情や体感を重視しながら、その場の濃度を楽しむタイプ。";
 }
 
+/* 保存した最新ロジック */
+export function getSMLabel(mPercent, sPercent) {
+  const mDiff = mPercent - sPercent;
+  const sDiff = sPercent - mPercent;
+
+  if (mPercent >= 70 && mDiff >= 40) {
+    return "ドM";
+  }
+
+  if (sPercent >= 70 && sDiff >= 40) {
+    return "ドS";
+  }
+
+  if (mDiff >= 20) {
+    return "M";
+  }
+
+  if (sDiff >= 20) {
+    return "S";
+  }
+
+  if (mDiff >= 15) {
+    return "M寄り";
+  }
+
+  if (sDiff >= 15) {
+    return "S寄り";
+  }
+
+  return "バランス型";
+}
+
 export function normalizeAxisBar(score) {
   return Math.max(0, Math.min(100, Math.round(((score + 24) / 48) * 100)));
 }
@@ -167,6 +199,7 @@ export function buildResultObject(questions, answers) {
     subtitle,
 
     smComment: getSMComment(mPercent, sPercent, typeCode),
+    smLabel: getSMLabel(mPercent, sPercent),
 
     mPercent,
     sPercent,
@@ -241,6 +274,14 @@ function renderMetaPills(result) {
   return `<div class="meta-line">${pills.join("")}</div>`;
 }
 
+function renderSMBigLabel(result) {
+  return `
+    <div class="sm-big-label">
+      あなたは <strong>${result.smLabel}</strong> です
+    </div>
+  `;
+}
+
 /* =========================
    Main Result Card HTML
 ========================= */
@@ -254,6 +295,7 @@ export function renderResultCardHTML(result) {
 
       <div class="result-title-comment">「${result.titleComment}」</div>
       <div class="result-sm-comment">${result.smComment}</div>
+      ${renderSMBigLabel(result)}
 
       <div class="gauge-block">
         ${barRow("S", result.sPercent)}
