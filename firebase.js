@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import {
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app-check.js"
+  import {
   getFirestore,
   addDoc,
   collection,
@@ -26,6 +27,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("ここにSiteKey"),
+  isTokenAutoRefreshEnabled: true
+});
 
 export {
   db,
