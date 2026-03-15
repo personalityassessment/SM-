@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>あなたのSMタイプは？</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="16タイプでわかるあなたのSM気質">
+  <meta property="og:title" content="あなたのSMタイプは？">
+  <meta property="og:description" content="16タイプでわかるあなたのSM気質">
+  <meta property="og:type" content="website">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>あなたのSMタイプは？</h1>
+    <p>― 16タイプでわかるあなたのSM気質 ―</p>
+
+    <div id="startScreen">
+      <button onclick="startDiagnosis()">診断スタート</button>
+    </div>
+
+    <div id="questionScreen" style="display:none">
+      <h2 id="questionText"></h2>
+
+      <div id="answers">
+        <button onclick="answer(1)">とてもそう思う</button>
+        <button onclick="answer(2)">ややそう思う</button>
+        <button onclick="answer(3)">どちらでもない</button>
+        <button onclick="answer(4)">あまり思わない</button>
+        <button onclick="answer(5)">全く思わない</button>
+      </div>
+
+      <p id="progress"></p>
+    </div>
+
+    <div id="resultScreen" style="display:none">
+      <div id="resultCard"></div>
+      <div id="compatibility"></div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
